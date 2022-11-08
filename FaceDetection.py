@@ -16,7 +16,7 @@ iotTopic = 'face_detection'
 errTopic = 'detection_failed'
 
 secret_name = "greengrass-lambda-access-s3-secretkey"
-region_name = "-east-1"
+region_name = "us-east-1"
 secret = ''
 access_key_id=''
 access_secret_key=''
@@ -122,7 +122,8 @@ def detectFaces():
                 faces = faceCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(20, 20))
                 faceNum = len(faces)
 
-            if faceNum > 70.0 :
+            if faceNum >= 1 :
+                print("detect face.")
                 try:
                     for (x,y,w,h) in faces:
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
@@ -134,7 +135,10 @@ def detectFaces():
                         break
                 
                 except IOError as e:
-                    print("err: ",str(e))                
+                    print("err: ",str(e))    
+
+            else:
+                print("detect nothing.")            
            
     except Exception as e:
         print(str(e))
