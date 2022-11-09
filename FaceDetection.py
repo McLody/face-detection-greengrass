@@ -1,16 +1,17 @@
-# import greengrasssdk
+import greengrasssdk
 import time
 import cv2
+import random
 import numpy as np
 from threading import Thread
-# import boto3
+import boto3
 import base64
 import json
-# from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError
 import multiprocessing as mp
 
 # Creating a greengrass core sdk client
-# client = greengrasssdk.client('iot-data')
+client = greengrasssdk.client('iot-data')
 
 iotTopic = 'face_detection'
 errTopic = 'detection_failed'
@@ -21,64 +22,66 @@ secret = ''
 access_key_id=''
 access_secret_key=''
 
-faceCascade = cv2.CascadeClassifier('Cascades/haarcascade_frontalface_default.xml')
 
-# def get_secret():
+
+def get_secret():
     
-#     # Create a Secrets Manager client
-#     session = boto3.session.Session()
-#     client = session.client(
-#         service_name='secretsmanager',
-#         region_name=region_name
-#     )
-#     # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
-#     # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-#     # We rethrow the exception by default.
-#     try:
-#         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-#     except ClientError as e:
-#         print(e)
-#         if e.response['Error']['Code'] == 'DecryptionFailureException':
-#             # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
-#             # Deal with the exception here, and/or rethrow at your discretion.
-#             raise e
-#         elif e.response['Error']['Code'] == 'InternalServiceErrorException':
-#             # An error occurred on the server side.
-#             # Deal with the exception here, and/or rethrow at your discretion.
-#             raise e
-#         elif e.response['Error']['Code'] == 'InvalidParameterException':
-#             # You provided an invalid value for a parameter.
-#             # Deal with the exception here, and/or rethrow at your discretion.
-#             raise e
-#         elif e.response['Error']['Code'] == 'InvalidRequestException':
-#             # You provided a parameter value that is not valid for the current state of the resource.
-#             # Deal with the exception here, and/or rethrow at your discretion.
-#             raise e
-#         elif e.response['Error']['Code'] == 'ResourceNotFoundException':
-#             # We can't find the resource that you asked for.
-#             # Deal with the exception here, and/or rethrow at your discretion.
-#             raise e
-#     else:
-#         # Decrypts secret using the associated KMS CMK.
-#         # Depending on whether the secret is a string or binary, one of these fields will be populated.
-#         if 'SecretString' in get_secret_value_response:
-#             global secret
-#             secret = get_secret_value_response['SecretString']
-#         else:
-#             decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+    # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
+    # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+    # We rethrow the exception by default.
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+    except ClientError as e:
+        print(e)
+        if e.response['Error']['Code'] == 'DecryptionFailureException':
+            # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InternalServiceErrorException':
+            # An error occurred on the server side.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InvalidParameterException':
+            # You provided an invalid value for a parameter.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InvalidRequestException':
+            # You provided a parameter value that is not valid for the current state of the resource.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'ResourceNotFoundException':
+            # We can't find the resource that you asked for.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+    else:
+        # Decrypts secret using the associated KMS CMK.
+        # Depending on whether the secret is a string or binary, one of these fields will be populated.
+        if 'SecretString' in get_secret_value_response:
+            global secret
+            secret = get_secret_value_response['SecretString']
+        else:
+            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
 
-# get_secret()
-# secret_json = json.loads(secret)
-# access_key_id = secret_json['access_key_id']
-# access_secret_key = secret_json['access_secret_key']
+get_secret()
+secret_json = json.loads(secret)
+access_key_id = secret_json['access_key_id']
+access_secret_key = secret_json['access_secret_key']
 
-# clientS3 = boto3.client(
-#     's3',
-#     aws_access_key_id = access_key_id,
-#     aws_secret_access_key = access_secret_key
-# )
+s3 = boto3.client(
+    's3',
+    aws_access_key_id = access_key_id,
+    aws_secret_access_key = access_secret_key
+)
 
-# bucket='greengrass-detect-realtime-video-702586307767'
+bucket='greengrass-detect-realtime-video-702586307767'
+faceCascadeXml = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
+faceCascade = cv2.CascadeClassifier(faceCascadeXml)
 
 def getFrame(q):
     cap = cv2.VideoCapture('/dev/video0')
@@ -119,7 +122,7 @@ def detectFaces():
                 continue
             else:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = faceCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(20, 20))
+                faces = faceCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=3, minSize=(20, 20))
                 faceNum = len(faces)
 
             if faceNum >= 1 :
@@ -128,16 +131,18 @@ def detectFaces():
                     for (x,y,w,h) in faces:
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-                    imgID = time.strftime("%Y%m%d%H%M%S")
-                    cv2.imwrite(imgID + '.jpg', frame)
+                    imgID = "image-" + time.strftime("%Y%m%d%H%M%S") + str(random.randint(0,9)) + '.jpg'
+                    # cv2.imwrite(imgID, frame)
+                    resp = s3.put_object(Bucket = bucket, Body = jpg.tobytes(), Key = imgID)
                     count += 1
-                    if count == 10 :
+                    if count == 5 :
                         break
                 
                 except IOError as e:
                     print("err: ",str(e))    
 
             else:
+                ret, jpg = cv2.imencode('.jpg', frame)
                 print("detect nothing.")            
            
     except Exception as e:
@@ -159,6 +164,7 @@ frame_thread = Frame_Thread()
 frame_thread.start()
 
 frame = queue.get()
+ret, jpg = cv2.imencode('.jpg', frame)
 
 detectFaces()
 
