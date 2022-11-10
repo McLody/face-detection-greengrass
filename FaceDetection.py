@@ -108,7 +108,7 @@ def detectFaces():
                 continue
             else:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = faceCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=3, minSize=(20, 20))
+                faces = faceCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4, minSize=(20, 20))
                 faceNum = len(faces)
 
             if faceNum >= 1 :
@@ -120,7 +120,7 @@ def detectFaces():
                     imgID = "image-" + time.strftime("%Y%m%d%H%M%S") + str(random.randint(0,9)) + '.jpg'
                     cv2.imwrite(imgID, frame)
                     global s3, bucket
-                    resp = s3.put_object(Bucket = bucket, Body = imgID, Key = imgID)
+                    resp = s3.put_object(Bucket = bucket, Body = open(imgID, 'rb'), Key = imgID)
                     print("upload the image")
                     count += 1
                     if count == 2 :
