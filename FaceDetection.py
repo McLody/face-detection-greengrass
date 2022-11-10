@@ -1,14 +1,14 @@
 
 import time
 import cv2
-import random
 import numpy as np
-from threading import Thread
 import boto3
-import base64
-import json
 from botocore.exceptions import ClientError
+import json
+import os
+from threading import Thread
 import multiprocessing as mp
+import random
 
 
 iotTopic = 'face_detection'
@@ -48,15 +48,24 @@ secret = json.loads(secret_json)
 access_key_id = secret['access_key_id']
 access_secret_key = secret['access_secret_key']
 
+print("get secret")
+
 s3 = boto3.client(
     's3',
     aws_access_key_id = access_key_id,
     aws_secret_access_key = access_secret_key
 )
 
-bucket='greengrass-detect-realtime-video-702586307767'
-faceCascadeXml = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
-faceCascade = cv2.CascadeClassifier(faceCascadeXml)
+print("get s3")
+
+bucket = s3.Bucket('greengrass-detect-realtime-video-702586307767')
+if not os.path.exists("haarcascade_frontalface_default.xml"):
+    bucket.download_file("haarcascade_frontalface_default.xml", "haarcascade_frontalface_default.xml", ExtraArgs=None, Callback=None, Config=None)
+# faceCascadeXml = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
+# faceCascade = cv2.CascadeClassifier(faceCascadeXml)
+faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+print("get faceCascade")
 
 def getFrame(q):
     cap = cv2.VideoCapture('/dev/video0')
@@ -107,10 +116,11 @@ def detectFaces():
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
                     imgID = "image-" + time.strftime("%Y%m%d%H%M%S") + str(random.randint(0,9)) + '.jpg'
-                    # cv2.imwrite(imgID, frame)
-                    resp = s3.put_object(Bucket = bucket, Body = jpg.tobytes(), Key = imgID)
+                    cv2.imwrite(imgID, frame)
+                    global bucket
+                    resp = bucket.put_object(imgID, Key = imgID)
                     count += 1
-                    if count == 5 :
+                    if count == 2 :
                         break
                 
                 except IOError as e:
