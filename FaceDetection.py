@@ -65,7 +65,7 @@ bucket = 'greengrass-detect-realtime-video-702586307767'
     # bucket.download_file("haarcascade_frontalface_default.xml", "haarcascade_frontalface_default.xml", ExtraArgs=None, Callback=None, Config=None)
 # faceCascadeXml = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
 # faceCascade = cv2.CascadeClassifier(faceCascadeXml)
-faceCascade = cv2.CascadeClassifier('Cascade/haarcascade_frontalface_default.xml')
+faceCascade = cv2.CascadeClassifier('Cascades/haarcascade_frontalface_default.xml')
 
 print("get faceCascade")
 
