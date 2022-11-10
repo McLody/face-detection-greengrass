@@ -1,4 +1,3 @@
-import greengrasssdk
 import time
 import cv2
 import random
@@ -10,8 +9,6 @@ import json
 from botocore.exceptions import ClientError
 import multiprocessing as mp
 
-# Creating a greengrass core sdk client
-client = greengrasssdk.client('iot-data')
 
 iotTopic = 'face_detection'
 errTopic = 'detection_failed'
