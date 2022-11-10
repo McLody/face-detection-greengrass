@@ -41,7 +41,7 @@ def get_secret():
 
     # Decrypts secret using the associated KMS key.
     global secret_json
-    secret_json = get_secret_value_response
+    secret_json = get_secret_value_response['SecretString']
 
 get_secret()
 secret = json.loads(secret_json)
