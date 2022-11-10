@@ -119,6 +119,7 @@ def detectFaces():
                     cv2.imwrite(imgID, frame)
                     global bucket
                     resp = bucket.put_object(imgID, Key = imgID)
+                    print("upload the image")
                     count += 1
                     if count == 2 :
                         break
