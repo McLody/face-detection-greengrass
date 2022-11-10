@@ -16,7 +16,7 @@ errTopic = 'detection_failed'
 
 secret_name = "greengrass-lambda-access-s3-secretkey"
 region_name = "us-east-1"
-secret = []
+secret_json = ''
 access_key_id=''
 access_secret_key=''
 
@@ -40,10 +40,11 @@ def get_secret():
         raise e
 
     # Decrypts secret using the associated KMS key.
-    global secret
-    secret = get_secret_value_response
+    global secret_json
+    secret_json = get_secret_value_response
 
 get_secret()
+secret = json.loads(secret_json)
 access_key_id = secret['access_key_id']
 access_secret_key = secret['access_secret_key']
 
