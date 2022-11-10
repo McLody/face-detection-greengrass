@@ -60,12 +60,12 @@ print("get s3")
 
 # bucket = s3.Bucket('greengrass-detect-realtime-video-702586307767')
 bucket = 'greengrass-detect-realtime-video-702586307767'
-if not os.path.exists("haarcascade_frontalface_default.xml"):
-    resp = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
+# if not os.path.exists("haarcascade_frontalface_default.xml"):
+#     resp = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
     # bucket.download_file("haarcascade_frontalface_default.xml", "haarcascade_frontalface_default.xml", ExtraArgs=None, Callback=None, Config=None)
 # faceCascadeXml = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
 # faceCascade = cv2.CascadeClassifier(faceCascadeXml)
-faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+faceCascade = cv2.CascadeClassifier('Cascade/haarcascade_frontalface_default.xml')
 
 print("get faceCascade")
 
@@ -119,8 +119,8 @@ def detectFaces():
 
                     imgID = "image-" + time.strftime("%Y%m%d%H%M%S") + str(random.randint(0,9)) + '.jpg'
                     cv2.imwrite(imgID, frame)
-                    global s3
-                    resp = s3.put_object(imgID, Key = imgID)
+                    global s3, bucket
+                    resp = s3.put_object(Bucket = bucket, Body = imgID, Key = imgID)
                     print("upload the image")
                     count += 1
                     if count == 2 :
