@@ -9,6 +9,7 @@ import os
 from threading import Thread
 import multiprocessing as mp
 import random
+import sys
 
 
 iotTopic = 'face_detection'
@@ -58,6 +59,27 @@ s3 = boto3.client(
 
 print("get s3")
 
+# def download_file(s3, bucket_name, key_name):
+#     file_name = key_name.split('/')[-1]
+#     content_dir = key_name.replace(file_name, '')
+
+#     # resource_local = os.path.join(local_save_path, content_dir)  # 本地存储路径
+#     # logger.info(f" 本地存储路径 resource_local = {resource_local}")
+#     if not os.path.exists(content_dir):
+#         os.makedirs(content_dir)
+
+#     local_storage = os.path.join(content_dir, file_name)  # 本地存储路径全路径
+    
+#     if os.path.exists(local_storage):
+#         return
+#     try:
+#         with open(local_storage, 'wb') as f:
+#             s3.download_fileobj(bucket_name, key_name, f)
+#             f.close()
+#     except OSError as e:
+#         return
+
+
 # bucket = s3.Bucket('greengrass-detect-realtime-video-702586307767')
 bucket = 'greengrass-detect-realtime-video-702586307767'
 # if not os.path.exists("haarcascade_frontalface_default.xml"):
@@ -65,7 +87,10 @@ bucket = 'greengrass-detect-realtime-video-702586307767'
     # bucket.download_file("haarcascade_frontalface_default.xml", "haarcascade_frontalface_default.xml", ExtraArgs=None, Callback=None, Config=None)
 # faceCascadeXml = s3.get_object(Bucket = bucket, Key = "haarcascade_frontalface_default.xml")
 # faceCascade = cv2.CascadeClassifier(faceCascadeXml)
-faceCascade = cv2.CascadeClassifier('Cascades/haarcascade_frontalface_default.xml')
+# route = 'Cascades/haarcascade_frontalface_default.xml'
+route = sys.argv[1]
+# download_file(s3, bucket, route)
+faceCascade = cv2.CascadeClassifier(route)
 
 print("get faceCascade")
 
@@ -86,6 +111,19 @@ def getFrame(q):
         if q.qsize() > 1:
             for i in range(q.qsize() - 1):
                 q.get()
+
+def del_files(dir_path):
+    if os.path.isfile(dir_path):
+        try:
+            os.remove(dir_path)
+        except BaseException as e:
+            print(e)
+    elif os.path.isdir(dir_path):
+        file_lis = os.listdir(dir_path)
+        for file_name in file_lis:
+            tf = os.path.join(dir_path, file_name)
+            del_files(tf)
+
 
 def detectFaces():
     count = 0
@@ -118,11 +156,12 @@ def detectFaces():
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
                     imgID = "image-" + time.strftime("%Y%m%d%H%M%S") + str(random.randint(0,9)) + '.jpg'
-                    cv2.imwrite(imgID, frame)
+                    # cv2.imwrite(imgID, frame)
                     global s3, bucket, jpg
-                    # resp = s3.put_object(Bucket = bucket, Body = open(imgID, 'rb'), Key = imgID)
-                    resp = s3.put_object(Bucket = bucket, Body = jpg.tobytes(), Key = imgID)
+                    resp = s3.put_object(Bucket = bucket, Body = open(imgID, 'rb'), Key = imgID)
+                    # resp = s3.put_object(Bucket = bucket, Body = jpg.tobytes(), Key = imgID)
                     print("upload the image")
+                    del_files(imgID)
                     count += 1
                     if count == 2 :
                         break
@@ -156,4 +195,6 @@ frame = queue.get()
 ret, jpg = cv2.imencode('.jpg', frame)
 
 detectFaces()
+
+
 
