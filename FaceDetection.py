@@ -156,7 +156,7 @@ def detectFaces():
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
                     imgID = "image-" + time.strftime("%Y%m%d%H%M%S") + str(random.randint(0,9)) + '.jpg'
-                    # cv2.imwrite(imgID, frame)
+                    cv2.imwrite(imgID, frame)
                     global s3, bucket, jpg
                     resp = s3.put_object(Bucket = bucket, Body = open(imgID, 'rb'), Key = imgID)
                     # resp = s3.put_object(Bucket = bucket, Body = jpg.tobytes(), Key = imgID)
